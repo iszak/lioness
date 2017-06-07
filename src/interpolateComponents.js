@@ -1,4 +1,7 @@
 import React from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+
+import curry from 'lodash.curry'
 
 /*
 
@@ -10,8 +13,6 @@ import React from 'react'
 
 */
 
-export default interpolateComponents
-
 const variableRegex = /(\{\{\s.+?(?=\s\}\})\s\}\})/g
 
 /**
@@ -21,13 +22,37 @@ export function isTemplateVariable(str) {
   return new RegExp(variableRegex).test(str)
 }
 
+export const interpolateToString = curry(interpolateComponents)(
+  (key, part) => part,
+  (key, part) => part,
+  (key, part) => part,
+  (key, element, children) => renderToStaticMarkup(React.cloneElement(element, { key }, children || null)),
+  (parts) => parts.join('')
+)
+
+export const interpolateToElement = curry(interpolateComponents)(
+  (key, part) => React.createElement('span', { key }, part),
+  (key, part) => React.createElement('span', { key }, part),
+  (key, part) => React.createElement('span', { key }, part),
+  (key, element, children) => React.cloneElement(element, { key }, children || null),
+  (parts) => <span>{parts}</span>
+)
+
 /**
  * Interpolates a string, replacing template variables with values
  * provided in the scope.
  *
  * Besides replacing variables with
  */
-export function interpolateComponents(str, scope = {}) {
+export function interpolateComponents(
+  stringReplacement,
+  noMatchScopeVariableReplacement,
+  stringScopeVariableReplacement,
+  elementScopeVariableReplacement,
+  combiner,
+  str,
+  scope = {}
+) {
   if (!str) {
     return str
   }
@@ -46,7 +71,7 @@ export function interpolateComponents(str, scope = {}) {
 
     // Not a template variable, return simple <span> with a string
     if (isTemplateVariable(part) === false) {
-      return React.createElement('span', { key }, parts[i])
+      return stringReplacement(key, parts[i])
     }
 
     let keyName = part.replace(/^\{\{\s/, '').replace(/\s\}\}$/, '')
@@ -54,7 +79,7 @@ export function interpolateComponents(str, scope = {}) {
 
     // No matching scope replacement, return raw string
     if (scope[scopeKey] === undefined) {
-      return React.createElement('span', { key }, parts[i])
+      return noMatchScopeVariableReplacement(key, parts[i])
     }
 
     const replacement = scope[scopeKey]
@@ -62,14 +87,13 @@ export function interpolateComponents(str, scope = {}) {
     // If the interpolated scope variable is not a React element, render
     // it as a string inside a <span>
     if (React.isValidElement(replacement) === false) {
-      return React.createElement('span', { key }, String(replacement))
+      return stringScopeVariableReplacement(key, String(replacement))
     }
 
-    // Clone React elements right off
-    return React.cloneElement(replacement, { key }, scopeChildren || null)
+    return elementScopeVariableReplacement(key, replacement, scopeChildren || null)
   })
 
   return interpolatedParts.length > 1
-    ? <span>{interpolatedParts}</span>
+    ? combiner(interpolatedParts)
     : interpolatedParts[0]
 }

@@ -3,8 +3,8 @@ import PropTypes from 'prop-types'
 
 import getGettextInstance from '../getGettextInstance.js'
 import * as contextTypes from '../contextTypes.js'
-import { t, tn, tp, tnp, tc, tcn, tcp, tcnp } from '../translators.js'
-import interpolateComponents from '../interpolateComponents.js'
+import { tc, tcn, tcp, tcnp } from '../translators.js'
+import { interpolateToElement } from '../interpolateComponents.js'
 
 /**
  * Localization context provider
@@ -14,8 +14,13 @@ class LionessProvider extends Component {
   // Prop types
   static propTypes = {
     messages: PropTypes.object.isRequired,
+    interpolate: PropTypes.func.isRequired,
     locale: PropTypes.string.isRequired,
     children: PropTypes.node.isRequired,
+  }
+
+  static defaultProps = {
+    interpolate: interpolateToElement,
   }
 
   // Child context types
@@ -34,16 +39,19 @@ class LionessProvider extends Component {
    * which all have been given a translation function.
    */
   getChildContext() {
+    const identity = x => x
+
     return {
       locale: this.props.locale,
-      t: t(this.gt.gettext.bind(this.gt)),
-      tn: tn(this.gt.ngettext.bind(this.gt)),
-      tp: tp(this.gt.pgettext.bind(this.gt)),
-      tnp: tnp(this.gt.npgettext.bind(this.gt)),
-      tc: tc(interpolateComponents, this.gt.gettext.bind(this.gt)),
-      tcn: tcn(interpolateComponents, this.gt.ngettext.bind(this.gt)),
-      tcp: tcp(interpolateComponents, this.gt.pgettext.bind(this.gt)),
-      tcnp: tcnp(interpolateComponents, this.gt.npgettext.bind(this.gt)),
+      interpolate: this.props.interpolate,
+      t: tc(this.gt.gettext.bind(this.gt), identity),
+      tn: tcn(this.gt.ngettext.bind(this.gt), identity),
+      tp: tcp(this.gt.pgettext.bind(this.gt), identity),
+      tnp: tcnp(this.gt.npgettext.bind(this.gt), identity),
+      tc: tc(this.gt.gettext.bind(this.gt)),
+      tcn: tcn(this.gt.ngettext.bind(this.gt)),
+      tcp: tcp(this.gt.pgettext.bind(this.gt)),
+      tcnp: tcnp(this.gt.npgettext.bind(this.gt)),
     }
   }
 

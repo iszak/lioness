@@ -16,6 +16,7 @@ class T extends Component {
   static propTypes = {
     message: messagePropType('children'),
     children: messagePropType('messages'),
+    interpolate: PropTypes.func.isRequired,
     messagePlural: PropTypes.string,
     context: PropTypes.string,
     count: PropTypes.number,
@@ -31,7 +32,7 @@ class T extends Component {
   }
 
   render() {
-    const { message, messagePlural, context, count, children, tcnp, ...scope } = this.props
+    const { message, messagePlural, interpolate, context, count, children, tcnp, ...scope } = this.props
 
     delete scope.t
     delete scope.tp
@@ -43,7 +44,7 @@ class T extends Component {
 
     const msgid = message || children || ''
 
-    const translatedContent = tcnp(context, msgid, messagePlural, count, { ...scope, count })
+    const translatedContent = tcnp(interpolate, context, msgid, messagePlural, count, { ...scope, count })
 
     return typeof translatedContent === 'string'
       ? <span>{translatedContent}</span>

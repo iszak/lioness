@@ -19,6 +19,8 @@ const MESSAGES = {
   'sv-SE': {},
 }
 
+const INTERPOLATE = () => {}
+
 // A child component that will receive the provider's context
 function EmptyComponent() {
   return <div />
@@ -30,7 +32,7 @@ describe('<LionessProvider />', () => {
 
   beforeEach(() => {
     provider = mount(
-      <LionessProvider messages={MESSAGES} locale={'en'}>
+      <LionessProvider messages={MESSAGES} interpolate={INTERPOLATE} locale={'en'}>
         <ContextConsumer />
       </LionessProvider>
     )
@@ -42,6 +44,10 @@ describe('<LionessProvider />', () => {
 
   it('accepts an object of messages/translations as a prop', () => {
     expect(provider.props().messages).to.deep.equal(MESSAGES)
+  })
+
+  it('accepts an interpolation function as a prop', () => {
+    expect(provider.props().interpolate).to.deep.equal(INTERPOLATE)
   })
 
   it('constructors a Gettext instance using its given props', () => {
@@ -68,5 +74,13 @@ describe('<LionessProvider />', () => {
   it('provides all translators through its child context', () => {
     const consumer = provider.find(ContextConsumer)
     expect(consumer.node.context).to.contain.all.keys(['t', 'tn', 'tp', 'tnp', 'tc', 'tcn', 'tcp', 'tcnp'])
+  })
+
+
+
+  it('provides all translators through its child context', () => {
+    const consumer = provider.find(ContextConsumer)
+    console.log(consumer.node.context['tcp'].arguments)
+    // expect().to.contain.all.keys(['t', 'tn', 'tp', 'tnp', 'tc', 'tcn', 'tcp', 'tcnp'])
   })
 })
